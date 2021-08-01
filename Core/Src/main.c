@@ -43,7 +43,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+unsigned long pressed = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -114,14 +114,45 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  keyboardhid.MODIFIER = 0x02;   // for left shift to print capital
-	  keyboardhid.KEYCODE1 = 0x04;   // for a
-	  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-	  HAL_Delay(50);
-	  keyboardhid.MODIFIER = 0x00;   //release left shift
-	  keyboardhid.KEYCODE1 = 0x00;   //realease key
-	  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-	  HAL_Delay(1000);
+
+	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
+	  {
+		  HAL_Delay(50);
+//		  keyboardhid.MODIFIER = 0x02;   // for left shift to print capital
+		  keyboardhid.MODIFIER = 0x01;   // for left ctrl to copy
+//		  keyboardhid.KEYCODE1 = 0x04;   // for a
+		  keyboardhid.KEYCODE1 = 0x06;   // for c
+
+
+
+
+
+		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+		  HAL_Delay(50);
+		  keyboardhid.MODIFIER = 0x00;   //release left shift
+		  keyboardhid.KEYCODE1 = 0x00;   //realease key
+		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+
+
+	  }
+	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2))
+	  {
+		  HAL_Delay(50);
+		  if(HAL_GetTick() - pressed > 100)
+		  {
+			  keyboardhid.MODIFIER = 0x01;   // for left ctrl to paste
+			  keyboardhid.KEYCODE1 = 0x19;   // for v
+			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+			  HAL_Delay(50);
+
+			  keyboardhid.MODIFIER = 0x00;   //release left shift
+			  keyboardhid.KEYCODE1 = 0x00;   //realease key
+			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+
+			  pressed = HAL_GetTick();
+		  }
+	  }
+	  HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
