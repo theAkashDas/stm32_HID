@@ -41,14 +41,22 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+ADC_HandleTypeDef hadc2;
 
 /* USER CODE BEGIN PV */
 unsigned long pressed = 0;
+uint8_t val = 0, interrupt_happened = 0;
+uint16_t AD_RES1 = 0;
+uint16_t AD_RES2 = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_ADC1_Init(void);
+static void MX_ADC2_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -103,7 +111,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USB_DEVICE_Init();
+  MX_ADC1_Init();
+  MX_ADC2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_ADCEx_Calibration_Start(&hadc1);
+  HAL_ADCEx_Calibration_Start(&hadc2);
 
   /* USER CODE END 2 */
 
@@ -115,44 +127,61 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
-	  {
-		  HAL_Delay(50);
-//		  keyboardhid.MODIFIER = 0x02;   // for left shift to print capital
-		  keyboardhid.MODIFIER = 0x01;   // for left ctrl to copy
-//		  keyboardhid.KEYCODE1 = 0x04;   // for a
-		  keyboardhid.KEYCODE1 = 0x06;   // for c
+      HAL_ADC_Start(&hadc1);
+      HAL_ADC_Start(&hadc2);
+     // Poll ADC1 Peripheral & TimeOut = 1mSec
+      HAL_ADC_PollForConversion(&hadc1, 1);
+      HAL_ADC_PollForConversion(&hadc2, 1);
+     // Read The ADC Conversion Result & Map It To PWM DutyCycle
+      AD_RES1 = HAL_ADC_GetValue(&hadc1);
+      AD_RES2 = HAL_ADC_GetValue(&hadc2);
 
 
+      if(interrupt_happened)
+      {
+    	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
+    	  interrupt_happened = 0;
+      }
 
-
-
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-		  HAL_Delay(50);
-		  keyboardhid.MODIFIER = 0x00;   //release left shift
-		  keyboardhid.KEYCODE1 = 0x00;   //realease key
-		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-
-
-	  }
-	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2))
-	  {
-		  HAL_Delay(50);
-		  if(HAL_GetTick() - pressed > 100)
-		  {
-			  keyboardhid.MODIFIER = 0x01;   // for left ctrl to paste
-			  keyboardhid.KEYCODE1 = 0x19;   // for v
-			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-			  HAL_Delay(50);
-
-			  keyboardhid.MODIFIER = 0x00;   //release left shift
-			  keyboardhid.KEYCODE1 = 0x00;   //realease key
-			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
-
-			  pressed = HAL_GetTick();
-		  }
-	  }
-	  HAL_Delay(10);
+//	  val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
+//	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
+//	  {
+//		  HAL_Delay(50);
+////		  keyboardhid.MODIFIER = 0x02;   // for left shift to print capital
+//		  keyboardhid.MODIFIER = 0x01;   // for left ctrl to copy
+////		  keyboardhid.KEYCODE1 = 0x04;   // for a
+//		  keyboardhid.KEYCODE1 = 0x06;   // for c
+//
+//
+//
+//
+//
+//		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+//		  HAL_Delay(50);
+//		  keyboardhid.MODIFIER = 0x00;   //release left shift
+//		  keyboardhid.KEYCODE1 = 0x00;   //realease key
+//		  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+//
+//
+//	  }
+//	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_2))
+//	  {
+//		  HAL_Delay(50);
+//		  if(HAL_GetTick() - pressed > 100)
+//		  {
+//			  keyboardhid.MODIFIER = 0x01;   // for left ctrl to paste
+//			  keyboardhid.KEYCODE1 = 0x19;   // for v
+//			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+//			  HAL_Delay(50);
+//
+//			  keyboardhid.MODIFIER = 0x00;   //release left shift
+//			  keyboardhid.KEYCODE1 = 0x00;   //realease key
+//			  USBD_HID_SendReport(&hUsbDeviceFS, &keyboardhid, sizeof(keyboardhid));
+//
+//			  pressed = HAL_GetTick();
+//		  }
+//	  }
+	  HAL_Delay(5);
   }
   /* USER CODE END 3 */
 }
@@ -194,12 +223,103 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_ADC|RCC_PERIPHCLK_USB;
+  PeriphClkInit.AdcClockSelection = RCC_ADCPCLK2_DIV4;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_PLL;
   if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief ADC1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC1_Init(void)
+{
+
+  /* USER CODE BEGIN ADC1_Init 0 */
+
+  /* USER CODE END ADC1_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC1_Init 1 */
+
+  /* USER CODE END ADC1_Init 1 */
+  /** Common config
+  */
+  hadc1.Instance = ADC1;
+  hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.DiscontinuousConvMode = DISABLE;
+  hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc1.Init.NbrOfConversion = 1;
+  if (HAL_ADC_Init(&hadc1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_7;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC1_Init 2 */
+
+  /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief ADC2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_ADC2_Init(void)
+{
+
+  /* USER CODE BEGIN ADC2_Init 0 */
+
+  /* USER CODE END ADC2_Init 0 */
+
+  ADC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN ADC2_Init 1 */
+
+  /* USER CODE END ADC2_Init 1 */
+  /** Common config
+  */
+  hadc2.Instance = ADC2;
+  hadc2.Init.ScanConvMode = ADC_SCAN_DISABLE;
+  hadc2.Init.ContinuousConvMode = DISABLE;
+  hadc2.Init.DiscontinuousConvMode = DISABLE;
+  hadc2.Init.ExternalTrigConv = ADC_SOFTWARE_START;
+  hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
+  hadc2.Init.NbrOfConversion = 1;
+  if (HAL_ADC_Init(&hadc2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Configure Regular Channel
+  */
+  sConfig.Channel = ADC_CHANNEL_6;
+  sConfig.Rank = ADC_REGULAR_RANK_1;
+  sConfig.SamplingTime = ADC_SAMPLETIME_1CYCLE_5;
+  if (HAL_ADC_ConfigChannel(&hadc2, &sConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN ADC2_Init 2 */
+
+  /* USER CODE END ADC2_Init 2 */
+
 }
 
 /**
@@ -214,27 +334,38 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PA0 PA1 PA2 PA3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PA4 PA5 PA6 PA7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+  /*Configure GPIO pin : PB12 */
+  GPIO_InitStruct.Pin = GPIO_PIN_12;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
 }
 
 /* USER CODE BEGIN 4 */
-
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if(GPIO_Pin == GPIO_PIN_5) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    	interrupt_happened = 1;
+    }
+}
 /* USER CODE END 4 */
 
 /**

@@ -15,3 +15,11 @@
 - changed device name to IEM OPEN CONTROLLER
 - push button at PA1, PA2
 - fixed the push button extra more than one triggers giving a small delay and condition
+
+### 1.0.4 (feature + update)
+- used the joystick module.
+- used ADC1 and ADC2 - PA7 for X axis and PA6 for Y axis
+- used PA5 as GPIO External Interrupt for Switch
+- PA7 and PA6 will do the function of W,A,S,D (not added code)
+- PA5 will work as ENTER
+- Next thing is to use the Push button as CTRL, SPACE_BAR and others.
