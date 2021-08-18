@@ -46,7 +46,7 @@ ADC_HandleTypeDef hadc2;
 
 /* USER CODE BEGIN PV */
 unsigned long pressed = 0;
-uint8_t val = 0, interrupt_happened = 0;
+uint8_t val = 0, interrupt_happened = 0, push_button_1 = 0, push_button_2 = 0, push_button_3 = 0, push_button_4 = 0;
 uint16_t AD_RES1 = 0;
 uint16_t AD_RES2 = 0;
 
@@ -142,6 +142,7 @@ int main(void)
     	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
     	  interrupt_happened = 0;
       }
+
 
 //	  val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
 //	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
@@ -339,10 +340,10 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA5 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  /*Configure GPIO pin : PA1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PB12 */
@@ -352,7 +353,22 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PB3 PB4 PB5 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
   /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
+
+  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
+
   HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
 
@@ -361,10 +377,27 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-    if(GPIO_Pin == GPIO_PIN_5) // If The INT Source Is EXTI Line9 (A9 Pin)
+    if(GPIO_Pin == GPIO_PIN_1) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
     	interrupt_happened = 1;
     }
+    if(GPIO_Pin == GPIO_PIN_3) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    	push_button_4 = 1;
+    }
+    if(GPIO_Pin == GPIO_PIN_4) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    	push_button_3 = 1;
+    }
+    if(GPIO_Pin == GPIO_PIN_5) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    	push_button_2 = 1;
+    }
+    if(GPIO_Pin == GPIO_PIN_7) // If The INT Source Is EXTI Line9 (A9 Pin)
+    {
+    	push_button_1 = 1;
+    }
+
 }
 /* USER CODE END 4 */
 

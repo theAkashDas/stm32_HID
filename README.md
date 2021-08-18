@@ -23,3 +23,8 @@
 - PA7 and PA6 will do the function of W,A,S,D (not added code)
 - PA5 will work as ENTER
 - Next thing is to use the Push button as CTRL, SPACE_BAR and others.
+
+### 1.0.5 (feature + update)
+- added the interrupt pins for push button.
+- changed the pin configurations as required.
+- interrupt code is not yet finished.
