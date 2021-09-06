@@ -34,3 +34,9 @@
 - assigned the push buttons button no. Refer .ioc file
 - interrupts in push button is working fine.
 - Need to remove the debounce problem in push button. 
+
+### 1.0.7 (update)
+- Added a structure for enabling debug.
+- Added system debug in the code to print the data.
+- need to add stdbool library to support true,false
+- code need to be organised.

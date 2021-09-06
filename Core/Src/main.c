@@ -35,6 +35,18 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define DBG_BUF_LEN     512
+DebugEnable debugenable;
+
+char DBG_BUFFER[DBG_BUF_LEN];
+
+#define SYSTEM_DEBUG(FORMAT,...) {\
+    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
+    strcpy(DBG_BUFFER, "[SYSTEM]: "); \
+    sprintf(DBG_BUFFER + strlen("[SYSTEM]: "),FORMAT,##__VA_ARGS__); \
+	if(debugenable.system)\
+		HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
+}
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -58,6 +70,8 @@ uint8_t buf[35] = {'\0'};
 uint8_t X = 0;
 uint8_t UART1_recv;
 uint8_t arr[10] = {'\0'};
+
+
 
 /* USER CODE END PV */
 
@@ -128,7 +142,7 @@ int main(void)
   HAL_UART_Receive_IT(&huart1, &UART1_recv, 1);
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADCEx_Calibration_Start(&hadc2);
-
+  debugenable.system = 1;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -154,7 +168,9 @@ int main(void)
     	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
     	  interrupt_happened = 0;
       }
-      printData(AD_RES1);
+//      printData(AD_RES1);
+
+      SYSTEM_DEBUG("1: %d, 2: %d\n",AD_RES1,AD_RES2);
 
 //	  val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
 //	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
@@ -458,6 +474,7 @@ void printData(int data)
 	sprintf((char*)buf,"Data received:  %d \r\n",data);
 	HAL_UART_Transmit(&huart1,buf,strlen((char*)buf),HAL_MAX_DELAY);
 }
+
 /* USER CODE END 4 */
 
 /**

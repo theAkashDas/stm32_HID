@@ -37,7 +37,9 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef struct {
+	uint8_t system;
+} DebugEnable;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
