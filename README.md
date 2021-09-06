@@ -28,3 +28,9 @@
 - added the interrupt pins for push button.
 - changed the pin configurations as required.
 - interrupt code is not yet finished.
+
+### 1.0.6 (feature + update)
+- added usart for serial port communication
+- assigned the push buttons button no. Refer .ioc file
+- interrupts in push button is working fine.
+- Need to remove the debounce problem in push button. 

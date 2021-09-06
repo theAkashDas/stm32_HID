@@ -24,6 +24,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_hid.h"
+#include "string.h"
+#include "stdio.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,11 +46,18 @@
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
+UART_HandleTypeDef huart1;
+
 /* USER CODE BEGIN PV */
 unsigned long pressed = 0;
 uint8_t val = 0, interrupt_happened = 0, push_button_1 = 0, push_button_2 = 0, push_button_3 = 0, push_button_4 = 0;
 uint16_t AD_RES1 = 0;
 uint16_t AD_RES2 = 0;
+
+uint8_t buf[35] = {'\0'};
+uint8_t X = 0;
+uint8_t UART1_recv;
+uint8_t arr[10] = {'\0'};
 
 /* USER CODE END PV */
 
@@ -57,8 +66,9 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+void printData(int data);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -113,7 +123,9 @@ int main(void)
   MX_USB_DEVICE_Init();
   MX_ADC1_Init();
   MX_ADC2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_UART_Receive_IT(&huart1, &UART1_recv, 1);
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADCEx_Calibration_Start(&hadc2);
 
@@ -142,7 +154,7 @@ int main(void)
     	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
     	  interrupt_happened = 0;
       }
-
+      printData(AD_RES1);
 
 //	  val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
 //	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
@@ -324,6 +336,39 @@ static void MX_ADC2_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -338,23 +383,23 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_12, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : PA1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  /*Configure GPIO pin : SW_Pin */
+  GPIO_InitStruct.Pin = SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  HAL_GPIO_Init(SW_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PB12 */
-  GPIO_InitStruct.Pin = GPIO_PIN_12;
+  /*Configure GPIO pin : LED_Pin */
+  GPIO_InitStruct.Pin = LED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB3 PB4 PB5 PB7 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_7;
+  /*Configure GPIO pins : B1_Pin B2_Pin B3_Pin B4_Pin */
+  GPIO_InitStruct.Pin = B1_Pin|B2_Pin|B3_Pin|B4_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
@@ -383,21 +428,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     }
     if(GPIO_Pin == GPIO_PIN_3) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
-    	push_button_4 = 1;
+    	interrupt_happened = 1;
     }
     if(GPIO_Pin == GPIO_PIN_4) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
-    	push_button_3 = 1;
+    	interrupt_happened = 1;
     }
     if(GPIO_Pin == GPIO_PIN_5) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
-    	push_button_2 = 1;
+    	interrupt_happened = 1;
     }
     if(GPIO_Pin == GPIO_PIN_7) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
-    	push_button_1 = 1;
+    	interrupt_happened = 1;
     }
 
+}
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if (huart->Instance == USART1)
+	{
+		UART1_recv -= 48;
+		printData(UART1_recv);
+	}
+	HAL_UART_Receive_IT(&huart1, &UART1_recv, 1);
+}
+void printData(int data)
+{
+	sprintf((char*)buf,"Data received:  %d \r\n",data);
+	HAL_UART_Transmit(&huart1,buf,strlen((char*)buf),HAL_MAX_DELAY);
 }
 /* USER CODE END 4 */
 
