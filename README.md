@@ -45,6 +45,20 @@
 - Added another print statement SIMPLE DEBUG
 - Added i2c2 for mpu
 - Added mpu6050 library.
+
+### 1.0.9 (feature + update)
+- Added TIM 1 in the code to deal with push button debouncing.
+- Added a Timer interrupt counting on push button interrupt.
+- need to check this thing thoroughly.
+- added adc library and usart library. Will organise the code in the end.
+- added structure for mouse controls.
+
+
+
+
+
+
+
 - Added Kalman filter in the code.
 - Everything is working fine.
 

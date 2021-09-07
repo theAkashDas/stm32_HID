@@ -28,6 +28,8 @@
 #include "stdio.h"
 #include "mpu6050.h"
 #include "stdbool.h"
+//#include "adc.h"
+//#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,23 +39,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DBG_BUF_LEN     512
+//#define DBG_BUF_LEN     512
 DebugEnable debugenable;
 MPU6050_t mpu6050;
-char DBG_BUFFER[DBG_BUF_LEN];
 
-#define SYSTEM_DEBUG(FORMAT,...) {\
-    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
-    strcpy(DBG_BUFFER, "[SYSTEM]: "); \
-    sprintf(DBG_BUFFER + strlen("[SYSTEM]: "),FORMAT,##__VA_ARGS__); \
-	if(debugenable.system)\
-		HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
-}
-#define SIMPLE_DEBUG(FORMAT,...) {\
-    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
-    sprintf(DBG_BUFFER,FORMAT,##__VA_ARGS__); \
-	HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
-}
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,6 +55,8 @@ ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
 
 I2C_HandleTypeDef hi2c2;
+
+TIM_HandleTypeDef htim1;
 
 UART_HandleTypeDef huart1;
 
@@ -80,6 +71,10 @@ uint8_t X = 0;
 uint8_t UART1_recv;
 uint8_t arr[10] = {'\0'};
 
+bool state = true;
+
+#define DBG_BUF_LEN     512
+char DBG_BUFFER[DBG_BUF_LEN];
 
 
 /* USER CODE END PV */
@@ -91,6 +86,7 @@ static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C2_Init(void);
+static void MX_TIM1_Init(void);
 /* USER CODE BEGIN PFP */
 void printData(int data);
 /* USER CODE END PFP */
@@ -99,6 +95,30 @@ void printData(int data);
 /* USER CODE BEGIN 0 */
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
+#define SYSTEM_DEBUG(FORMAT,...) {\
+    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
+    strcpy(DBG_BUFFER, "[SYSTEM]: "); \
+    sprintf(DBG_BUFFER + strlen("[SYSTEM]: "),FORMAT,##__VA_ARGS__); \
+	if(debugenable.system)\
+		HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
+}
+#define SIMPLE_DEBUG(FORMAT,...) {\
+    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
+    sprintf(DBG_BUFFER,FORMAT,##__VA_ARGS__); \
+	HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
+}
+
+
+
+typedef struct
+{
+	uint8_t button;
+	int8_t mouse_x;
+	int8_t mouse_y;
+	int8_t wheel;
+} mouseHID;
+
+mouseHID mousehid = {0,0,0,0};
 
 typedef struct
 {
@@ -113,6 +133,9 @@ typedef struct
 } keyboardHID;
 
 keyboardHID keyboardhid = {0,0,0,0,0,0,0,0};
+
+
+
 
 /* USER CODE END 0 */
 
@@ -149,6 +172,7 @@ int main(void)
   MX_ADC2_Init();
   MX_USART1_UART_Init();
   MX_I2C2_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   MPU6050_Init(&hi2c2);
 
@@ -166,11 +190,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  MPU6050_Read_Accel(&hi2c2,&mpu6050);
-//	  MPU6050_Read_Gyro(&hi2c2,&mpu6050);
 	  MPU6050_Read_All(&hi2c2,&mpu6050);
-//	  SIMPLE_DEBUG("Gx %f, Gy %f, Gz %f \n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
-//	  SYSTEM_DEBUG("%f,%f,%f\n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
 //	  SIMPLE_DEBUG("%f,%f,%f\n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
 	  SIMPLE_DEBUG("%f,%f\n",mpu6050.KalmanAngleX,mpu6050.KalmanAngleY)
       HAL_ADC_Start(&hadc1);
@@ -183,11 +203,11 @@ int main(void)
       AD_RES2 = HAL_ADC_GetValue(&hadc2);
 
 
-      if(interrupt_happened)
-      {
-    	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
-    	  interrupt_happened = 0;
-      }
+//      if(interrupt_happened)
+//      {
+//    	  HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_12);
+//    	  interrupt_happened = 0;
+//      }
 //      printData(AD_RES1);
 
 //      SYSTEM_DEBUG("1: %d, 2: %d\n",AD_RES1,AD_RES2);
@@ -406,6 +426,52 @@ static void MX_I2C2_Init(void)
 }
 
 /**
+  * @brief TIM1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM1_Init(void)
+{
+
+  /* USER CODE BEGIN TIM1_Init 0 */
+
+  /* USER CODE END TIM1_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM1_Init 1 */
+
+  /* USER CODE END TIM1_Init 1 */
+  htim1.Instance = TIM1;
+  htim1.Init.Prescaler = 48000;
+  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim1.Init.Period = 50;
+  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim1.Init.RepetitionCounter = 0;
+  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM1_Init 2 */
+
+  /* USER CODE END TIM1_Init 2 */
+
+}
+
+/**
   * @brief USART1 Initialization Function
   * @param None
   * @retval None
@@ -496,9 +562,11 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     {
     	interrupt_happened = 1;
     }
-    if(GPIO_Pin == GPIO_PIN_3) // If The INT Source Is EXTI Line9 (A9 Pin)
+    if(GPIO_Pin == GPIO_PIN_3 && state == true) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
+    	HAL_TIM_Base_Start_IT(&htim1);
     	interrupt_happened = 1;
+    	state = false;
     }
     if(GPIO_Pin == GPIO_PIN_4) // If The INT Source Is EXTI Line9 (A9 Pin)
     {
@@ -513,6 +581,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     	interrupt_happened = 1;
     }
 
+}
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+	  /* Prevent unused argument(s) compilation warning */
+	  UNUSED(htim);
+
+	  /* NOTE : This function should not be modified, when the callback is needed,
+	            the HAL_TIM_PeriodElapsedCallback could be implemented in the user file
+	   */
+		if(HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_3) == GPIO_PIN_RESET)
+		{
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_12);
+			state = true;
+			HAL_TIM_Base_Stop_IT(&htim1);
+		}
 }
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
