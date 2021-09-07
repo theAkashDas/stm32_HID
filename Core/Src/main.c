@@ -26,6 +26,8 @@
 #include "usbd_hid.h"
 #include "string.h"
 #include "stdio.h"
+#include "mpu6050.h"
+#include "stdbool.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +39,7 @@
 /* USER CODE BEGIN PD */
 #define DBG_BUF_LEN     512
 DebugEnable debugenable;
-
+MPU6050_t mpu6050;
 char DBG_BUFFER[DBG_BUF_LEN];
 
 #define SYSTEM_DEBUG(FORMAT,...) {\
@@ -46,6 +48,11 @@ char DBG_BUFFER[DBG_BUF_LEN];
     sprintf(DBG_BUFFER + strlen("[SYSTEM]: "),FORMAT,##__VA_ARGS__); \
 	if(debugenable.system)\
 		HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
+}
+#define SIMPLE_DEBUG(FORMAT,...) {\
+    memset(DBG_BUFFER, 0, DBG_BUF_LEN);\
+    sprintf(DBG_BUFFER,FORMAT,##__VA_ARGS__); \
+	HAL_UART_Transmit(&huart1, (uint8_t*)(DBG_BUFFER), strlen((const char *)(DBG_BUFFER)), 2000);\
 }
 /* USER CODE END PD */
 
@@ -57,6 +64,8 @@ char DBG_BUFFER[DBG_BUF_LEN];
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
 ADC_HandleTypeDef hadc2;
+
+I2C_HandleTypeDef hi2c2;
 
 UART_HandleTypeDef huart1;
 
@@ -81,6 +90,7 @@ static void MX_GPIO_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_I2C2_Init(void);
 /* USER CODE BEGIN PFP */
 void printData(int data);
 /* USER CODE END PFP */
@@ -138,7 +148,11 @@ int main(void)
   MX_ADC1_Init();
   MX_ADC2_Init();
   MX_USART1_UART_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
+  MPU6050_Init(&hi2c2);
+
+
   HAL_UART_Receive_IT(&huart1, &UART1_recv, 1);
   HAL_ADCEx_Calibration_Start(&hadc1);
   HAL_ADCEx_Calibration_Start(&hadc2);
@@ -152,7 +166,13 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
+//	  MPU6050_Read_Accel(&hi2c2,&mpu6050);
+//	  MPU6050_Read_Gyro(&hi2c2,&mpu6050);
+	  MPU6050_Read_All(&hi2c2,&mpu6050);
+//	  SIMPLE_DEBUG("Gx %f, Gy %f, Gz %f \n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
+//	  SYSTEM_DEBUG("%f,%f,%f\n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
+//	  SIMPLE_DEBUG("%f,%f,%f\n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
+	  SIMPLE_DEBUG("%f,%f\n",mpu6050.KalmanAngleX,mpu6050.KalmanAngleY)
       HAL_ADC_Start(&hadc1);
       HAL_ADC_Start(&hadc2);
      // Poll ADC1 Peripheral & TimeOut = 1mSec
@@ -170,7 +190,7 @@ int main(void)
       }
 //      printData(AD_RES1);
 
-      SYSTEM_DEBUG("1: %d, 2: %d\n",AD_RES1,AD_RES2);
+//      SYSTEM_DEBUG("1: %d, 2: %d\n",AD_RES1,AD_RES2);
 
 //	  val = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1);
 //	  if(!HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1))
@@ -210,7 +230,7 @@ int main(void)
 //			  pressed = HAL_GetTick();
 //		  }
 //	  }
-	  HAL_Delay(5);
+	  HAL_Delay(50);
   }
   /* USER CODE END 3 */
 }
@@ -348,6 +368,40 @@ static void MX_ADC2_Init(void)
   /* USER CODE BEGIN ADC2_Init 2 */
 
   /* USER CODE END ADC2_Init 2 */
+
+}
+
+/**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
 
 }
 

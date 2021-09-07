@@ -16,6 +16,7 @@ RM := rm -rf
 -include Drivers/STM32F1xx_HAL_Driver/Src/subdir.mk
 -include Core/Startup/subdir.mk
 -include Core/Src/subdir.mk
+-include Application\ Drivers/Src/subdir.mk
 -include subdir.mk
 -include objects.mk
 
@@ -66,7 +67,7 @@ main-build: stm32hid.elf secondary-outputs
 
 # Tool invocations
 stm32hid.elf: $(OBJS) $(USER_OBJS) /media/bot/ADFiles/STM32CubeIDE/workspace_1.6.1/stm32hid/STM32F103C8TX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "stm32hid.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/media/bot/ADFiles/STM32CubeIDE/workspace_1.6.1/stm32hid/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="stm32hid.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+	arm-none-eabi-gcc -o "stm32hid.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/media/bot/ADFiles/STM32CubeIDE/workspace_1.6.1/stm32hid/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="stm32hid.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

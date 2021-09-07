@@ -40,3 +40,11 @@
 - Added system debug in the code to print the data.
 - need to add stdbool library to support true,false
 - code need to be organised.
+
+### 1.0.8 (feature + update)
+- Added another print statement SIMPLE DEBUG
+- Added i2c2 for mpu
+- Added mpu6050 library.
+- Added Kalman filter in the code.
+- Everything is working fine.
+
