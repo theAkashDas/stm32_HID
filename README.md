@@ -52,6 +52,8 @@
 - need to check this thing thoroughly.
 - added adc library and usart library. Will organise the code in the end.
 - added structure for mouse controls.
+- Added Kalman filter in the code.
+- Everything is working fine.
 
 ### 1.0.10 (feature)
 - Added code for mouse x,y control using mpu data.
@@ -59,10 +61,4 @@
 - couldnt test the mouse control hid feature in windows.
 - not working in linux.
 
-
-
-
-
-- Added Kalman filter in the code.
-- Everything is working fine.
 
