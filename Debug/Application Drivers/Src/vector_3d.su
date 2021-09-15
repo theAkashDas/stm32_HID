@@ -1,0 +1,8 @@
+vector_3d.c:12:12:vector_3d_initialize	40	static
+vector_3d.c:21:12:vector_3d_sum	48	static
+vector_3d.c:30:12:vector_3d_difference	48	static
+vector_3d.c:39:7:vector_3d_dot_product	32	static
+vector_3d.c:46:12:vector_3d_cross_product	48	static
+vector_3d.c:55:12:vector_3d_normalize	48	static
+vector_3d.c:66:12:vector_3d_scale	48	static
+vector_3d.c:75:7:InvSqrt	24	static

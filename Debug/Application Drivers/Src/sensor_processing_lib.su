@@ -1,0 +1,7 @@
+sensor_processing_lib.c:10:12:quaternion_from_accelerometer	64	static
+sensor_processing_lib.c:30:12:quaternion_from_gyro	80	static
+sensor_processing_lib.c:43:7:fusion_coeffecient	48	static
+sensor_processing_lib.c:53:12:sensor_gravity_normalized	48	static
+sensor_processing_lib.c:63:12:fuse_vector	80	static
+sensor_processing_lib.c:72:12:update_gravity_vector	64	static
+sensor_processing_lib.c:79:12:update_fused_vector	72	static

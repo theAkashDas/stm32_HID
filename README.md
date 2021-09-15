@@ -53,7 +53,11 @@
 - added adc library and usart library. Will organise the code in the end.
 - added structure for mouse controls.
 
-
+### 1.0.10 (feature)
+- Added code for mouse x,y control using mpu data.
+- Added quaternion but removed due to some problems.
+- couldnt test the mouse control hid feature in windows.
+- not working in linux.
 
 
 

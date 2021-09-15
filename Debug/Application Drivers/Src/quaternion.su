@@ -1,0 +1,7 @@
+quaternion.c:11:12:quaternion_initialize	40	static
+quaternion.c:21:12:quaternion_product	40	static
+quaternion.c:32:12:quaternion_conjugate	32	static
+quaternion.c:42:12:quaternion_normalize	48	static
+quaternion.c:54:12:quaternion_between_vectors	128	static
+quaternion.c:66:12:quaternion_rotate_vector	136	static
+quaternion.c:75:14:quaternion_to_euler_angles	80	static

@@ -202,6 +202,13 @@ int main(void)
       AD_RES1 = HAL_ADC_GetValue(&hadc1);
       AD_RES2 = HAL_ADC_GetValue(&hadc2);
 
+//      if()
+      {
+    	  mousehid.mouse_x = mpu6050.KalmanAngleY;
+    	  mousehid.mouse_y = mpu6050.KalmanAngleX;
+      }
+
+      USBD_HID_SendReport(&hUsbDeviceFS, &mousehid, sizeof(mousehid));
 
 //      if(interrupt_happened)
 //      {
