@@ -61,6 +61,16 @@ TIM_HandleTypeDef htim1;
 UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN PV */
+int16_t min_xval = 128;
+int16_t max_xval = -128;
+int16_t min_yval = 128;
+int16_t max_yval = -128;
+
+int16_t newxval = 0;
+int16_t newyval = 0;
+
+uint8_t button_flag=0;
+
 unsigned long pressed = 0;
 uint8_t val = 0, interrupt_happened = 0, push_button_1 = 0, push_button_2 = 0, push_button_3 = 0, push_button_4 = 0;
 uint16_t AD_RES1 = 0;
@@ -135,7 +145,21 @@ typedef struct
 keyboardHID keyboardhid = {0,0,0,0,0,0,0,0};
 
 
+void MPU_Calibrate (void)
+{
+	for (int i=0; i<50; i++)
+	{
+		MPU6050_Read_All(&hi2c2,&mpu6050);
+		min_xval = MIN(min_xval, mpu6050.KalmanAngleX);
+		max_xval = MAX(max_xval, mpu6050.KalmanAngleX);
+		min_yval = MIN(min_yval, mpu6050.KalmanAngleY);
+		max_yval = MAX(max_yval, mpu6050.KalmanAngleY);
+		HAL_Delay (50);
+	}
 
+	/* Turn On the LED to show the completion of calibration */
+	HAL_GPIO_WritePin(GPIOB, GPIO_PIN_5, 0);
+}
 
 /* USER CODE END 0 */
 
@@ -175,7 +199,7 @@ int main(void)
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   MPU6050_Init(&hi2c2);
-
+  MPU_Calibrate();
 
   HAL_UART_Receive_IT(&huart1, &UART1_recv, 1);
   HAL_ADCEx_Calibration_Start(&hadc1);
@@ -193,7 +217,40 @@ int main(void)
 	  MPU6050_Read_All(&hi2c2,&mpu6050);
 //	  SIMPLE_DEBUG("%f,%f,%f\n ",mpu6050.Gx,mpu6050.Gy,mpu6050.Gz);
 	  SIMPLE_DEBUG("%f,%f\n",mpu6050.KalmanAngleX,mpu6050.KalmanAngleY)
-      HAL_ADC_Start(&hadc1);
+	  if (mpu6050.KalmanAngleX < min_xval) newxval = mpu6050.KalmanAngleX - min_xval;
+	  if (mpu6050.KalmanAngleX > max_xval) newxval = mpu6050.KalmanAngleX - max_xval;
+	  if (mpu6050.KalmanAngleY < min_yval) newyval = mpu6050.KalmanAngleY - min_yval;
+	  if (mpu6050.KalmanAngleY > max_yval) newyval = mpu6050.KalmanAngleY - max_yval;
+
+	  SIMPLE_DEBUG("%d,%d\n",newxval,newyval);
+
+//	  if ((newxval > 20) || (newxval < -20))
+//	  {
+//		  mousehid.mouse_y = newxval/3;
+//	  }
+//
+//	  else mousehid.mouse_y = 0;
+//
+//	  if ((newyval > 20) || (newyval < -20))
+//	  {
+//		  mousehid.mouse_x = newyval/3;
+//	  }
+//
+//	  else mousehid.mouse_x = 0;
+
+	  if (((newyval > 5) || (newyval < -5))||((newxval > 5) || (newxval < -5)))
+	  {
+		  mousehid.mouse_x = newyval/3;
+		  mousehid.mouse_y = newxval/3;
+	  }
+
+	  else
+      {
+		mousehid.mouse_x = 0;
+		mousehid.mouse_y = 0;
+      }
+
+	  HAL_ADC_Start(&hadc1);
       HAL_ADC_Start(&hadc2);
      // Poll ADC1 Peripheral & TimeOut = 1mSec
       HAL_ADC_PollForConversion(&hadc1, 1);
@@ -202,11 +259,6 @@ int main(void)
       AD_RES1 = HAL_ADC_GetValue(&hadc1);
       AD_RES2 = HAL_ADC_GetValue(&hadc2);
 
-//      if()
-      {
-    	  mousehid.mouse_x = mpu6050.KalmanAngleY;
-    	  mousehid.mouse_y = mpu6050.KalmanAngleX;
-      }
 
       USBD_HID_SendReport(&hUsbDeviceFS, &mousehid, sizeof(mousehid));
 
@@ -257,7 +309,7 @@ int main(void)
 //			  pressed = HAL_GetTick();
 //		  }
 //	  }
-	  HAL_Delay(50);
+	  HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }

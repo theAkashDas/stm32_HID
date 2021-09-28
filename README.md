@@ -62,4 +62,29 @@
 - not working in linux.
 - need to find solutions for quaternion
 
+### 1.0.11 (feature)
+- Mouse movement functions are working fine with the orientation of the MPU.
+- Need to change the sensitivity by changing the newx and newy values.
+- Next work is related to walking movement by joystick module.
+- Keyboard arrow keys will be assigned to Joystick module
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
